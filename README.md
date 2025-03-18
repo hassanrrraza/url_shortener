@@ -2,11 +2,12 @@
 
 A modern URL shortening service with a sleek dashboard and powerful analytics, built with Python, Flask, and modern frontend technologies.
 
-![URL Shortener Dashboard](https://example.com/url-shortener-screenshot.png)
+![URL Shortener Dashboard](images/main%20image.PNG)
+
 
 ## Features
 
-- **URL Shortening**: Convert long URLs into short, manageable links
+- **URL Shortening**: Convert long URLs into short links which is manageable
 - **Custom Aliases**: Create custom short URLs for better brand recognition
 - **Expiration Dates**: Set expiration dates for your shortened URLs
 - **Analytics Dashboard**: Track clicks, user agents, and more
