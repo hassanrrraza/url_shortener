@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - URL Shortener</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-link-slash"></i> URL Shortener 
+                <span class="tagline">| Simplify Your Links</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <h1 class="mb-4"><i class="fas fa-chart-line me-2"></i> URL Analytics Dashboard</h1>
+        
+        <div class="analytics-dashboard">
+            <!-- Summary Cards -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalUrls">0</h3>
+                        <p>Total URLs</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="totalClicks">0</h3>
+                        <p>Total Clicks</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="activeUrls">0</h3>
+                        <p>Active URLs</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-times"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 id="expiredUrls">0</h3>
+                        <p>Expired URLs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie me-2"></i>URL Status Distribution</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-bar me-2"></i>Top URLs by Clicks</h3>
+                        <canvas id="topUrlsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Weekday Chart -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-calendar-week me-2"></i>Number of URLs / Week Day</h3>
+                        <div style="height: 180px;">
+                            <canvas id="weekdayChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL List with Analytics -->
+            <div class="url-list">
+                <h3 class="mb-4"><i class="fas fa-table me-2"></i>URL Analytics</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Original URL</th>
+                                <th>Shortened URL</th>
+                                <th>Clicks</th>
+                                <th>Created</th>
+                                <th>Expires</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="urlAnalyticsList">
+                            <!-- URLs will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize charts
+            let statusChart = null;
+            let topUrlsChart = null;
+            let weekdayChart = null;
+            
+            initCharts();
+            loadAnalytics();
+            
+            // Initialize charts
+            function initCharts() {
+                statusChart = initStatusChart('statusChart');
+                topUrlsChart = initTopUrlsChart('topUrlsChart');
+                weekdayChart = initWeekdayChart('weekdayChart');
+            }
+
+            function formatUrl(url) {
+                if (url.length > 40) {
+                    return url.substring(0, 37) + '...';
+                }
+                return url;
+            }
+            
+            function formatDate(dateString) {
+                if (!dateString) return 'Never';
+                const date = new Date(dateString);
+                return new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }).format(date);
+            }
+            
+            function getStatusBadge(expiryDate) {
+                if (!expiryDate) return '<span class="badge bg-success">Active</span>';
+                const expiry = new Date(expiryDate);
+                const now = new Date();
+                return expiry > now 
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-danger">Expired</span>';
+            }
+
+            // Function to update charts with new data
+            function updateCharts(data) {
+                console.log("Updating charts with data:", data);
+                
+                // Update status distribution chart
+                if (statusChart && data.active_urls !== undefined && data.expired_urls !== undefined) {
+                    statusChart.data.datasets[0].data = [data.active_urls, data.expired_urls];
+                    statusChart.update();
+                }
+                
+                // Update top URLs chart
+                if (topUrlsChart && data.urls && data.urls.length > 0) {
+                    const sortedUrls = [...data.urls].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 5);
+                    topUrlsChart.data.labels = sortedUrls.map(url => url.short_code);
+                    topUrlsChart.data.datasets[0].data = sortedUrls.map(url => url.clicks || 0);
+                    topUrlsChart.update();
+                }
+                
+                // Update weekday chart if we have URLs data
+                if (weekdayChart && data.urls && data.urls.length > 0) {
+                    // Count URLs by day of week
+                    const weekdayCounts = [0, 0, 0, 0, 0, 0, 0]; // Mon-Sun
+                    
+                    data.urls.forEach(url => {
+                        if (url.created_at) {
+                            try {
+                                const date = new Date(url.created_at);
+                                const day = date.getDay(); // 0 = Sunday, 1 = Monday, ...
+                                const weekdayIndex = day === 0 ? 6 : day - 1; // Convert to Mon-Sun (0-6)
+                                weekdayCounts[weekdayIndex]++;
+                            } catch (e) {
+                                console.error("Error parsing date:", url.created_at, e);
+                            }
+                        }
+                    });
+                    
+                    weekdayChart.data.datasets[0].data = weekdayCounts;
+                    weekdayChart.update();
+                }
+            }
+            
+            // Function to load analytics data
+            async function loadAnalytics() {
+                try {
+                    console.log("Fetching analytics data...");
+                    const data = await UrlShortenerAPI.getAnalytics();
+                    
+                    // Update summary cards
+                    document.getElementById('totalUrls').textContent = data.total_urls || 0;
+                    document.getElementById('totalClicks').textContent = data.total_clicks || 0;
+                    document.getElementById('activeUrls').textContent = data.active_urls || 0;
+                    document.getElementById('expiredUrls').textContent = data.expired_urls || 0;
+
+                    // Update charts
+                    updateCharts(data);
+
+                    // Update URL analytics table
+                    updateUrlTable(data.urls || []);
+                } catch (error) {
+                    console.error('Error loading analytics:', error);
+                    document.body.insertAdjacentHTML('afterbegin', 
+                        `<div style="background: #f87171; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
+                            Error loading analytics data: ${error.message}
+                            <button onclick="this.parentNode.remove()" style="float:right; background: none; border: none; color: white; cursor: pointer;">×</button>
+                        </div>`
+                    );
+                }
+            }
+            
+            // Function to update URL table
+            function updateUrlTable(urls) {
+                const urlList = document.getElementById('urlAnalyticsList');
+                
+                if (!urls || urls.length === 0) {
+                    urlList.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center">No URLs found</td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                urlList.innerHTML = urls.map(url => `
+                    <tr>
+                        <td title="${url.original_url}">${formatUrl(url.original_url)}</td>
+                        <td>${window.location.origin}/${url.short_code}</td>
+                        <td>${url.clicks || 0}</td>
+                        <td>${formatDate(url.created_at)}</td>
+                        <td>${url.expiry_date ? formatDate(url.expiry_date) : 'Never'}</td>
+                        <td>${getStatusBadge(url.expiry_date)}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Add retry button
+            document.body.insertAdjacentHTML('afterbegin', 
+                `<div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+                    <button onclick="window.location.reload()" class="btn btn-primary">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>`
+            );
+            
+            // Set up auto-refresh every 60 seconds
+            setInterval(loadAnalytics, 60000);
+        });
+    </script>
+</body>
+</html> 

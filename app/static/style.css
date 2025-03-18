@@ -1,0 +1,125 @@
+/* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-block-size: 100vh;
+}
+
+.container {
+    max-inline-size: 600px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Header Styles */
+header h1 {
+    font-size: 2rem;
+    color: #007BFF;
+    margin-block-end: 10px;
+}
+
+header p {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* Form Styles */
+form {
+    margin-block-start: 20px;
+}
+
+input[type="url"] {
+    inline-size: 80%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: all 0.3s ease-in-out;
+}
+
+input[type="url"]:focus {
+    border-color: #007BFF;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+button {
+    padding: 12px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Result Styles */
+.result {
+    margin-block-start: 20px;
+    padding: 10px;
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.result p {
+    margin: 0;
+    font-weight: bold;
+    color: #555;
+}
+
+.short-url-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-block-start: 10px;
+}
+
+.short-url {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: 600;
+    margin-inline-end: 10px;
+    font-size: 1.1rem;
+}
+
+.short-url:hover {
+    text-decoration: underline;
+}
+
+.copy-btn {
+    padding: 8px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.copy-btn:hover {
+    background-color: #218838;
+}
+
+/* Footer Styles */
+footer {
+    margin-block-start: 30px;
+    font-size: 0.9rem;
+    color: #888;
+}
