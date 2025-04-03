@@ -1,196 +1,161 @@
-# URL Shortener
+# 🔗 URL Shortener
 
-A modern URL shortening service with a sleek dashboard and powerful analytics, built with Python, Flask, and modern frontend technologies.
+<div align="center">
 
-![URL Shortener Dashboard](images/main%20image.PNG)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/Flask-2.3.3-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
+A modern, feature-rich URL shortening service built with Flask and modern web technologies. Transform long URLs into memorable short links with comprehensive analytics.
 
-## Features
+[Features](#-features) • [Demo](#-live-demo) • [Installation](#-installation) • [API](#-api-reference) • [Contributing](#-contributing)
 
-- **URL Shortening**: Convert long URLs into short links which is manageable
-- **Custom Aliases**: Create custom short URLs for better brand recognition
-- **Expiration Dates**: Set expiration dates for your shortened URLs
-- **Analytics Dashboard**: Track clicks, user agents, and more
-- **Interactive Charts**: Visualize URL performance with dynamic charts
-- **Real-time Updates**: Track URL performance in real-time
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+<img src="images/main%20image.PNG" alt="URL Shortener Dashboard" width="80%">
 
-## Technology Stack
+</div>
 
-- **Backend**: Python, Flask, SQLAlchemy
-- **Frontend**: HTML5, CSS3, JavaScript, Bootstrap 5
-- **Database**: SQLite
-- **Charts**: Chart.js
-- **Icons**: Font Awesome
-- **User Agent Parsing**: user-agents library
+## ✨ Features
 
-## Getting Started
+🔹 **Instant Shortening**: Convert long URLs into concise, shareable links  
+🔹 **Custom Aliases**: Create branded short URLs for better recognition  
+🔹 **Expiration Control**: Set expiry dates for temporary links  
+🔹 **Rich Analytics**: Track clicks, locations, devices, and more  
+🔹 **Visual Insights**: Interactive charts powered by Chart.js  
+🔹 **Real-time Updates**: Monitor URL performance in real-time  
+🔹 **Responsive Design**: Perfect experience across all devices
 
-### Prerequisites
+## 🚀 Live Demo
 
-- Python 3.9+
-- pip (Python package manager)
+Experience the application in action: [Live Demo](https://github.com/hassanrrraza/url_shortener)
 
-### Installation
+## 🛠️ Tech Stack
 
-1. Clone the repository:
+### Backend
+- **[Python](https://www.python.org/)**: Core programming language
+- **[Flask](https://flask.palletsprojects.com/)**: Web framework
+- **[SQLAlchemy](https://www.sqlalchemy.org/)**: ORM for database operations
+
+### Frontend
+- **[Bootstrap 5](https://getbootstrap.com/)**: Responsive UI framework
+- **[Chart.js](https://www.chartjs.org/)**: Interactive data visualization
+- **[Font Awesome](https://fontawesome.com/)**: Beautiful icons
+
+### Database & Tools
+- **SQLite**: Lightweight database
+- **[user-agents](https://pypi.org/project/user-agents/)**: Device detection
+
+## 📦 Installation
+
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/url-shortener.git
-   cd url-shortener
+   git clone https://github.com/hassanrrraza/url_shortener.git
+   cd url_shortener
    ```
 
-2. Create and activate a virtual environment:
+2. **Set up virtual environment**
    ```bash
-   # On Windows
+   # Windows
    python -m venv venv
    venv\Scripts\activate
 
-   # On macOS/Linux
+   # macOS/Linux
    python -m venv venv
    source venv/bin/activate
    ```
 
-3. Install dependencies:
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Initialize the database:
+4. **Initialize database**
    ```bash
    python init_db.py
    ```
 
-5. Run the application:
+5. **Start the server**
    ```bash
    python run.py
    ```
 
-6. Open your browser and visit:
-   ```
-   http://localhost:5000
-   ```
+6. **Visit** `http://localhost:5000` in your browser
 
-## Project Structure
+## 📝 API Reference
 
+### Create Short URL
+```http
+POST /api/shorten
 ```
-url-shortener/
-├── app/                         # Main application package
-│   ├── __init__.py              # Flask application initialization
-│   ├── models.py                # Database models
-│   ├── routes.py                # API and view routes
-│   ├── utils.py                 # Utility functions
-│   ├── static/                  # Static files
-│   │   ├── css/                 # CSS stylesheets
-│   │   │   └── style.css        # Main stylesheet
-│   │   └── js/                  # JavaScript files
-│   │       ├── api.js           # API interaction module
-│   │       ├── charts.js        # Chart configuration
-│   │       ├── debug.js         # Debugging tools
-│   │       └── utils.js         # Utility functions
-│   └── templates/               # HTML templates
-│       ├── index.html           # Main page
-│       └── analytics.html       # Analytics dashboard
-├── instance/                    # Instance-specific files
-│   └── app.db                   # SQLite database
-├── debug_db.py                  # Database debugging script
-├── init_db.py                   # Database initialization script
-├── requirements.txt             # Python dependencies
-├── run.py                       # Application entry point
-└── README.md                    # This file
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `url` | `string` | **Required**. URL to shorten |
+| `custom_alias` | `string` | Custom alias for the URL |
+| `expiry_date` | `string` | Expiration date (ISO format) |
+
+### Get URL Analytics
+```http
+GET /api/analytics/:id
 ```
-
-## API Documentation
-
-### Get All URLs
-- **Endpoint**: `/api/urls`
-- **Method**: `GET`
-- **Response**: List of all URLs and their data
-
-### Shorten URL
-- **Endpoint**: `/api/shorten`
-- **Method**: `POST`
-- **Body**:
-  ```json
-  {
-    "url": "https://example.com/long/url",
-    "custom_alias": "myalias",
-    "expiry_date": "2023-12-31T23:59:59"
-  }
-  ```
-- **Response**:
-  ```json
-  {
-    "id": 1,
-    "original_url": "https://example.com/long/url",
-    "short_code": "myalias",
-    "short_url": "http://localhost:5000/myalias",
-    "created_at": "2023-06-01T12:00:00",
-    "expiry_date": "2023-12-31T23:59:59",
-    "is_active": true
-  }
-  ```
 
 ### Delete URL
-- **Endpoint**: `/api/urls/:id`
-- **Method**: `DELETE`
-- **Response**: Success message
-
-### Get Analytics
-- **Endpoint**: `/api/analytics`
-- **Method**: `GET`
-- **Response**: Comprehensive analytics data
-
-## Usage Examples
-
-### Creating a shortened URL
-
-```javascript
-const urlData = {
-  url: 'https://example.com/very/long/url/that/needs/to/be/shortened',
-  custom_alias: 'example',
-  expiry_date: '2023-12-31T23:59:59'
-};
-
-fetch('/api/shorten', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(urlData)
-})
-.then(response => response.json())
-.then(data => console.log(data))
-.catch(error => console.error('Error:', error));
+```http
+DELETE /api/urls/:id
 ```
 
-## Future Enhancements
+## 📂 Project Structure
 
-- User authentication system
-- QR code generation for URLs
-- Password protection for sensitive URLs
-- URL grouping and tagging
-- Analytics export (CSV, PDF)
-- API rate limiting
-- URL quality checking
+```
+url_shortener/
+├── app/                    # Application package
+│   ├── models.py          # Database models
+│   ├── routes.py          # API endpoints
+│   ├── static/            # Static assets
+│   └── templates/         # HTML templates
+├── instance/              # Instance data
+├── requirements.txt       # Dependencies
+└── run.py                # Entry point
+```
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are what make the open source community amazing! Any contributions you make are **greatly appreciated**.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 🔮 Future Enhancements
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- [ ] User authentication system
+- [ ] QR code generation
+- [ ] Password-protected links
+- [ ] Bulk URL shortening
+- [ ] Advanced analytics export
+- [ ] API rate limiting
+- [ ] Custom domain support
 
-## Acknowledgements
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 👏 Acknowledgements
 
 - [Flask](https://flask.palletsprojects.com/)
 - [SQLAlchemy](https://www.sqlalchemy.org/)
 - [Chart.js](https://www.chartjs.org/)
 - [Bootstrap](https://getbootstrap.com/)
-- [Font Awesome](https://fontawesome.com/) 
+- [Font Awesome](https://fontawesome.com/)
+
+## 📬 Contact
+
+Hassan Raza - [@hassanrrraza](https://github.com/hassanrrraza)
+
+Project Link: [https://github.com/hassanrrraza/url_shortener](https://github.com/hassanrrraza/url_shortener)
+
+---
+<div align="center">
+⭐ Star this repo if you find it helpful!
+</div> 
