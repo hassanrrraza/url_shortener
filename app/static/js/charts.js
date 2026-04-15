@@ -30,7 +30,7 @@ function initStatusChart(elementId) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        color: '#ffffff'
+                        color: '#334155'
                     }
                 }
             }
@@ -60,7 +60,7 @@ function initTopUrlsChart(elementId) {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: '#ffffff'
+                        color: '#334155'
                     }
                 }
             },
@@ -72,7 +72,7 @@ function initTopUrlsChart(elementId) {
                     },
                     ticks: {
                         precision: 0,
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 },
                 y: {
@@ -80,7 +80,7 @@ function initTopUrlsChart(elementId) {
                         display: false
                     },
                     ticks: {
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 }
             }
@@ -129,17 +129,17 @@ function initWeekdayChart(elementId) {
                         display: false
                     },
                     ticks: {
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
+                        color: 'rgba(148, 163, 184, 0.25)'
                     },
                     ticks: {
                         precision: 0,
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 }
             }
@@ -170,32 +170,32 @@ function initClickActivityChart(elementId) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        color: '#ffffff'
+                        color: '#334155'
                     }
                 },
                 title: {
                     display: true,
                     text: 'URL Click Activity',
-                    color: '#ffffff'
+                    color: '#334155'
                 }
             },
             scales: {
                 x: {
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
+                        color: 'rgba(148, 163, 184, 0.25)'
                     },
                     ticks: {
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.05)'
+                        color: 'rgba(148, 163, 184, 0.25)'
                     },
                     ticks: {
                         precision: 0,
-                        color: '#8d99ae'
+                        color: '#64748b'
                     }
                 }
             }
