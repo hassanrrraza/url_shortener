@@ -2,7 +2,9 @@ from flask import render_template, jsonify, request, redirect, url_for
 from app import app, db
 from app.models import URLMap, ClickAnalytics
 from datetime import datetime, timedelta
+from sqlalchemy.exc import IntegrityError
 import random
+import re
 import string
 
 @app.route('/')
@@ -134,48 +136,89 @@ def get_analytics():
         print(error_msg)
         return jsonify({'error': error_msg}), 500
 
+def _normalize_incoming_url(url):
+    if url is None:
+        return None
+    url = str(url).strip()
+    if not url:
+        return None
+    if not re.match(r'^[a-zA-Z][a-zA-Z\d+\-.]*:', url):
+        url = 'https://' + url
+    return url
+
+
+def _parse_expiry_datetime(expiry_raw):
+    if expiry_raw is None:
+        return None
+    s = str(expiry_raw).strip()
+    if not s:
+        return None
+    s_iso = s.replace('Z', '+00:00')
+    try:
+        return datetime.fromisoformat(s_iso)
+    except ValueError:
+        pass
+    for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d'):
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    raise ValueError('Invalid expiry date format')
+
+
 @app.route('/api/shorten', methods=['POST'])
 def shorten_url():
     print("Shorten URL endpoint called")
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         print(f"Received JSON data: {data}")
-        
-        url = data.get('url')
+
+        url = _normalize_incoming_url(data.get('url'))
         custom_alias = data.get('custom_alias')
-        expiry_date = data.get('expiry_date')
-        
-        print(f"Parsed data: {url}, {custom_alias}, {expiry_date}")
-        
+        if custom_alias is not None:
+            custom_alias = str(custom_alias).strip() or None
+        expiry_raw = data.get('expiry_date')
+
+        print(f"Parsed data: {url}, {custom_alias}, {expiry_raw}")
+
         if not url:
             return jsonify({'error': 'URL is required'}), 400
-            
-        # Generate short code
-        short_code = custom_alias if custom_alias else generate_short_code()
-        
-        # Create URL map
+
+        try:
+            expiry_dt = _parse_expiry_datetime(expiry_raw)
+        except ValueError as err:
+            return jsonify({'error': str(err)}), 400
+
+        if custom_alias:
+            if URLMap.query.filter_by(short_code=custom_alias).first():
+                return jsonify({'error': 'This alias is already in use'}), 409
+            short_code = custom_alias
+        else:
+            short_code = generate_short_code()
+
         url_map = URLMap(
             original_url=url,
             short_code=short_code,
-            expiry_date=datetime.fromisoformat(expiry_date) if expiry_date else None
+            expiry_date=expiry_dt
         )
-        
+
         print(f"Creating URL map with: {url}, {short_code}")
-        
-        db.session.add(url_map)
-        db.session.commit()
-        
-        # Initialize click analytics
-        analytics = ClickAnalytics(url_id=url_map.id, clicks=0)
-        db.session.add(analytics)
-        db.session.commit()
-        
+
+        try:
+            db.session.add(url_map)
+            db.session.flush()
+            db.session.add(ClickAnalytics(url_id=url_map.id, clicks=0))
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({'error': 'That short link or alias already exists'}), 409
+
         print("URL successfully shortened")
         return jsonify({
             'short_code': short_code,
-            'short_url': f"{request.host_url}{short_code}"
+            'short_url': f"{request.host_url.rstrip('/')}/{short_code}"
         })
-        
+
     except Exception as e:
         print(f"Error in shorten_url: {str(e)}")
         db.session.rollback()
@@ -193,7 +236,7 @@ def get_urls():
                 'original_url': url.original_url,
                 'short_code': url.short_code,
                 'clicks': clicks.clicks if clicks else 0,
-                'created_at': url.created_at.isoformat(),
+                'created_at': url.created_at.isoformat() if url.created_at else None,
                 'expiry_date': url.expiry_date.isoformat() if url.expiry_date else None
             })
         return jsonify({'urls': urls_data})

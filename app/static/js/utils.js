@@ -5,6 +5,22 @@
  */
 
 /**
+ * Trims pasted input and adds https:// when no scheme is present (so shortening works like the address bar).
+ * @param {string} raw - Raw user input
+ * @returns {string} Normalized URL string (may still be invalid — validate with URL constructor)
+ */
+function normalizeUrlInput(raw) {
+    let url = (raw || '').trim();
+    if (!url) {
+        return '';
+    }
+    if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url)) {
+        url = 'https://' + url;
+    }
+    return url;
+}
+
+/**
  * Formats a URL for display by truncating it if it's too long
  * @param {string} url - The URL to format
  * @param {number} maxLength - Maximum length before truncation

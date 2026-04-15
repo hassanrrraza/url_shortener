@@ -31,13 +31,21 @@ class UrlShortenerAPI {
             },
             body: JSON.stringify(urlData)
         });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to shorten URL');
+
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch (e) {
+            /* empty or non-JSON body */
         }
-        
-        return await response.json();
+
+        if (!response.ok) {
+            const msg = (payload && (payload.error || payload.message))
+                || `Failed to shorten URL (${response.status})`;
+            throw new Error(msg);
+        }
+
+        return payload;
     }
     
     /**
