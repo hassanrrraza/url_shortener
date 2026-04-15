@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics Dashboard - URL Shortener</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -14,7 +17,8 @@
     <script src="{{ url_for('static', filename='js/debug.js') }}"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="fas fa-link-slash"></i> URL Shortener 
@@ -37,8 +41,13 @@
         </div>
     </nav>
 
+    <main id="main-content" tabindex="-1">
     <div class="main-container">
-        <h1 class="mb-4"><i class="fas fa-chart-line me-2"></i> URL Analytics Dashboard</h1>
+        <header class="page-hero">
+            <p class="page-hero__eyebrow">Analytics</p>
+            <h1 class="page-hero__title">URL performance at a glance</h1>
+            <p class="page-hero__lead">Totals, distribution, and per-link detail refresh automatically so you always see current activity.</p>
+        </header>
         
         <div class="analytics-dashboard">
             <!-- Summary Cards -->
@@ -81,39 +90,52 @@
                 </div>
             </div>
 
-            <!-- Charts Row 1 -->
-            <div class="row mb-4">
+            <section class="section-block" aria-labelledby="analytics-charts-heading">
+                <div class="section-heading">
+                    <h2 id="analytics-charts-heading" class="section-heading__title">Charts</h2>
+                    <p class="section-heading__hint">Status split, leaders by clicks, and weekday creation pattern</p>
+                </div>
+            <div class="row mb-4 g-4">
                 <div class="col-md-6">
-                    <div class="chart-card">
+                    <div class="chart-card h-100">
                         <h3><i class="fas fa-chart-pie me-2"></i>URL Status Distribution</h3>
-                        <canvas id="statusChart"></canvas>
+                        <div class="chart-surface">
+                            <canvas id="statusChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="chart-card">
+                    <div class="chart-card h-100">
                         <h3><i class="fas fa-chart-bar me-2"></i>Top URLs by Clicks</h3>
-                        <canvas id="topUrlsChart"></canvas>
+                        <div class="chart-surface">
+                            <canvas id="topUrlsChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
+            </section>
             
-            <!-- Weekday Chart -->
+            <section class="section-block" aria-labelledby="analytics-weekday-heading">
+                <div class="section-heading">
+                    <h2 id="analytics-weekday-heading" class="section-heading__title">Creation rhythm</h2>
+                    <p class="section-heading__hint">New links added by weekday</p>
+                </div>
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="chart-card">
                         <h3><i class="fas fa-calendar-week me-2"></i>Number of URLs / Week Day</h3>
-                        <div style="height: 180px;">
+                        <div class="chart-surface chart-surface--compact">
                             <canvas id="weekdayChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
+            </section>
 
-            <!-- URL List with Analytics -->
             <div class="url-list">
                 <h3 class="mb-4"><i class="fas fa-table me-2"></i>URL Analytics</h3>
-                <div class="table-responsive">
-                    <table class="table">
+                <div class="table-responsive table-responsive-app">
+                    <table class="table mb-0">
                         <thead>
                             <tr>
                                 <th>Original URL</th>
@@ -132,6 +154,7 @@
             </div>
         </div>
     </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -240,9 +263,9 @@
                 } catch (error) {
                     console.error('Error loading analytics:', error);
                     document.body.insertAdjacentHTML('afterbegin', 
-                        `<div style="background: #f87171; color: white; padding: 15px; text-align: center; position: fixed; top: 0; left: 0; right: 0; z-index: 9999;">
-                            Error loading analytics data: ${error.message}
-                            <button onclick="this.parentNode.remove()" style="float:right; background: none; border: none; color: white; cursor: pointer;">×</button>
+                        `<div class="global-error-banner" role="alert">
+                            <span class="global-error-banner__text">Error loading analytics data: ${error.message}</span>
+                            <button type="button" class="global-error-banner__close" onclick="this.parentNode.remove()" aria-label="Dismiss">×</button>
                         </div>`
                     );
                 }
@@ -255,7 +278,7 @@
                 if (!urls || urls.length === 0) {
                     urlList.innerHTML = `
                         <tr>
-                            <td colspan="6" class="text-center">No URLs found</td>
+                            <td colspan="6" class="table-empty-cell">No URLs found yet. Shorten a link on the home page to see it here.</td>
                         </tr>
                     `;
                     return;
@@ -273,11 +296,11 @@
                 `).join('');
             }
             
-            // Add retry button
-            document.body.insertAdjacentHTML('afterbegin', 
-                `<div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-                    <button onclick="window.location.reload()" class="btn btn-primary">
-                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+            document.body.insertAdjacentHTML('beforeend', 
+                `<div class="fab-refresh">
+                    <button type="button" onclick="window.location.reload()" class="btn btn-primary btn-fab" title="Refresh analytics">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        <span>Refresh</span>
                     </button>
                 </div>`
             );
