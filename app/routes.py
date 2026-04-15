@@ -1,6 +1,7 @@
 from flask import render_template, jsonify, request, redirect, url_for
 from app import app, db
-from app.models import URLMap, ClickAnalytics
+from app.models import URLMap, ClickAnalytics, ClickEvent
+from app.click_tracking import click_context_from_request
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError
 import random
@@ -248,12 +249,13 @@ def get_urls():
 def delete_url(url_id):
     try:
         url = URLMap.query.get_or_404(url_id)
-        
-        # Delete associated analytics
+
         analytics = ClickAnalytics.query.filter_by(url_id=url.id).first()
         if analytics:
             db.session.delete(analytics)
-            
+
+        ClickEvent.query.filter_by(url_id=url.id).delete(synchronize_session=False)
+
         db.session.delete(url)
         db.session.commit()
         return jsonify({'message': 'URL deleted successfully'})
@@ -261,6 +263,79 @@ def delete_url(url_id):
         print(f"Error in delete_url: {str(e)}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+def _recent_clicks_limit(raw_limit, default=25, cap=100):
+    try:
+        n = int(raw_limit)
+    except (TypeError, ValueError):
+        n = default
+    return max(1, min(n, cap))
+
+
+@app.route('/api/clicks/recent')
+def get_recent_clicks():
+    try:
+        limit = _recent_clicks_limit(request.args.get('limit'))
+        rows = (
+            db.session.query(ClickEvent, URLMap)
+            .join(URLMap, ClickEvent.url_id == URLMap.id)
+            .order_by(ClickEvent.occurred_at.desc())
+            .limit(limit)
+            .all()
+        )
+        events = []
+        for ev, u in rows:
+            orig = u.original_url or ''
+            events.append({
+                'short_code': u.short_code,
+                'original_url': orig,
+                'original_url_display': (orig[:80] + '…') if len(orig) > 80 else orig,
+                'occurred_at': ev.occurred_at.isoformat() if ev.occurred_at else None,
+                'device_type': ev.device_type,
+                'browser': ev.browser,
+                'os': ev.os,
+                'referrer': ev.referrer,
+                'referrer_display': (
+                    (ev.referrer[:60] + '…') if ev.referrer and len(ev.referrer) > 60 else ev.referrer
+                ),
+                'ip_address': ev.ip_address,
+            })
+        return jsonify({'events': events})
+    except Exception as e:
+        print(f"Error in get_recent_clicks: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/urls/<int:url_id>/clicks')
+def get_url_clicks(url_id):
+    try:
+        if not URLMap.query.get(url_id):
+            return jsonify({'error': 'URL not found'}), 404
+        limit = _recent_clicks_limit(request.args.get('limit'), default=50, cap=100)
+        rows = (
+            ClickEvent.query.filter_by(url_id=url_id)
+            .order_by(ClickEvent.occurred_at.desc())
+            .limit(limit)
+            .all()
+        )
+        events = []
+        for ev in rows:
+            events.append({
+                'occurred_at': ev.occurred_at.isoformat() if ev.occurred_at else None,
+                'device_type': ev.device_type,
+                'browser': ev.browser,
+                'os': ev.os,
+                'referrer': ev.referrer,
+                'referrer_display': (
+                    (ev.referrer[:60] + '…') if ev.referrer and len(ev.referrer) > 60 else ev.referrer
+                ),
+                'ip_address': ev.ip_address,
+            })
+        return jsonify({'url_id': url_id, 'events': events})
+    except Exception as e:
+        print(f"Error in get_url_clicks: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/<short_code>')
 def redirect_to_url(short_code):
@@ -270,16 +345,36 @@ def redirect_to_url(short_code):
         # Check if URL has expired
         if url_map.expiry_date and url_map.expiry_date <= datetime.utcnow():
             return render_template('expired.html', url=url_map)
-        
-        # Update click count
+
+        ctx = click_context_from_request(request)
+        now = datetime.utcnow()
+
         analytics = ClickAnalytics.query.filter_by(url_id=url_map.id).first()
         if analytics:
             analytics.clicks += 1
-            analytics.timestamp = datetime.utcnow()
         else:
             analytics = ClickAnalytics(url_id=url_map.id, clicks=1)
             db.session.add(analytics)
-        
+
+        analytics.timestamp = now
+        analytics.clicked_at = now
+        analytics.referrer = ctx['referrer']
+        analytics.ip_address = ctx['ip_address']
+        analytics.device_type = ctx['device_type']
+        analytics.browser = ctx['browser']
+        analytics.os = ctx['os']
+
+        db.session.add(ClickEvent(
+            url_id=url_map.id,
+            occurred_at=now,
+            referrer=ctx['referrer'],
+            ip_address=ctx['ip_address'],
+            device_type=ctx['device_type'],
+            browser=ctx['browser'],
+            os=ctx['os'],
+            user_agent=ctx['user_agent'],
+        ))
+
         db.session.commit()
         return redirect(url_map.original_url)
         

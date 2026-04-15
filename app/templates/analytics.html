@@ -132,6 +132,35 @@
             </div>
             </section>
 
+            <section class="section-block url-list" aria-labelledby="recent-clicks-heading">
+                <div class="section-heading">
+                    <h2 id="recent-clicks-heading" class="section-heading__title h3 mb-0">
+                        <i class="fas fa-bolt me-2"></i>Recent clicks
+                    </h2>
+                    <p class="section-heading__hint mb-0">Per-visit log (device, referrer, IP). Refreshes with the page.</p>
+                </div>
+                <div class="table-responsive table-responsive-app mt-3">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Short link</th>
+                                <th>Destination</th>
+                                <th>Device</th>
+                                <th>Browser</th>
+                                <th>Referrer</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentClicksList">
+                            <tr>
+                                <td colspan="7" class="table-empty-cell">Loading…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <div class="url-list">
                 <h3 class="mb-4"><i class="fas fa-table me-2"></i>URL Analytics</h3>
                 <div class="table-responsive table-responsive-app">
@@ -177,6 +206,7 @@
             }
 
             loadAnalytics();
+            loadRecentClicks();
 
             function formatUrl(url) {
                 if (url.length > 40) {
@@ -268,6 +298,8 @@
 
                     // Update URL analytics table
                     updateUrlTable(data.urls || []);
+
+                    loadRecentClicks();
                 } catch (error) {
                     console.error('Error loading analytics:', error);
                     document.body.insertAdjacentHTML('afterbegin', 
@@ -302,6 +334,58 @@
                         <td>${getStatusBadge(url.expiry_date)}</td>
                     </tr>
                 `).join('');
+            }
+
+            function escapeHtml(s) {
+                if (s == null || s === '') {
+                    return '';
+                }
+                const div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            async function loadRecentClicks() {
+                const tbody = document.getElementById('recentClicksList');
+                if (!tbody) {
+                    return;
+                }
+                try {
+                    const data = await UrlShortenerAPI.getRecentClicks(20);
+                    const events = data.events || [];
+                    if (events.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="table-empty-cell">No clicks recorded yet. Open a short link to see visits here.</td>
+                            </tr>
+                        `;
+                        return;
+                    }
+                    tbody.innerHTML = events.map(ev => {
+                        const when = ev.occurred_at ? formatDate(ev.occurred_at) : '—';
+                        const shortLink = `${window.location.origin}/${escapeHtml(ev.short_code)}`;
+                        const dest = escapeHtml(ev.original_url_display || ev.original_url || '');
+                        const ref = ev.referrer_display || ev.referrer || '—';
+                        return `
+                            <tr>
+                                <td>${escapeHtml(when)}</td>
+                                <td><code class="small">${escapeHtml(ev.short_code)}</code></td>
+                                <td title="${escapeHtml(ev.original_url || '')}">${dest}</td>
+                                <td>${escapeHtml(ev.device_type || '—')}</td>
+                                <td>${escapeHtml(ev.browser || '—')}</td>
+                                <td title="${escapeHtml(ev.referrer || '')}">${escapeHtml(ref)}</td>
+                                <td><span class="text-muted small">${escapeHtml(ev.ip_address || '—')}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    console.error('Recent clicks:', e);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="table-empty-cell">Could not load recent clicks.</td>
+                        </tr>
+                    `;
+                }
             }
             
             document.body.insertAdjacentHTML('beforeend', 

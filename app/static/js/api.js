@@ -84,4 +84,46 @@ class UrlShortenerAPI {
         
         return data;
     }
+
+    /**
+     * Recent click events across all short links (newest first).
+     * @param {number} [limit=25]
+     * @returns {Promise<{ events: Array }>}
+     */
+    static async getRecentClicks(limit = 25) {
+        const q = new URLSearchParams();
+        if (limit != null) {
+            q.set('limit', String(limit));
+        }
+        const response = await fetch(`/api/clicks/recent?${q.toString()}`);
+        if (!response.ok) {
+            throw new Error(`API returned status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data;
+    }
+
+    /**
+     * Click history for one shortened URL.
+     * @param {number} urlId
+     * @param {number} [limit=50]
+     */
+    static async getUrlClicks(urlId, limit = 50) {
+        const q = new URLSearchParams();
+        if (limit != null) {
+            q.set('limit', String(limit));
+        }
+        const response = await fetch(`/api/urls/${urlId}/clicks?${q.toString()}`);
+        if (!response.ok) {
+            throw new Error(`API returned status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data;
+    }
 } 

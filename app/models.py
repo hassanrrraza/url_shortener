@@ -15,6 +15,12 @@ class URLMap(db.Model):
     tags = db.Column(db.String(200), nullable=True)
     description = db.Column(db.String(500), nullable=True)
     clicks = db.relationship('ClickAnalytics', backref='url', lazy=True)
+    click_events = db.relationship(
+        'ClickEvent',
+        backref='url',
+        lazy=True,
+        cascade='all, delete-orphan',
+    )
     total_clicks = db.Column(db.Integer, default=0)
 
     def to_dict(self):
@@ -62,9 +68,30 @@ class ClickAnalytics(db.Model):
 
     @staticmethod
     def parse_user_agent(user_agent_string):
-        user_agent = parse(user_agent_string)
-        return {
-            'device_type': 'Mobile' if user_agent.is_mobile else 'Tablet' if user_agent.is_tablet else 'Desktop',
-            'browser': f"{user_agent.browser.family} {user_agent.browser.version_string}",
-            'os': f"{user_agent.os.family} {user_agent.os.version_string}"
-        }
+        unknown = {'device_type': 'Unknown', 'browser': 'Unknown', 'os': 'Unknown'}
+        if not user_agent_string or not str(user_agent_string).strip():
+            return unknown
+        try:
+            user_agent = parse(str(user_agent_string))
+            return {
+                'device_type': 'Mobile' if user_agent.is_mobile else 'Tablet' if user_agent.is_tablet else 'Desktop',
+                'browser': f"{user_agent.browser.family} {user_agent.browser.version_string}"[:100],
+                'os': f"{user_agent.os.family} {user_agent.os.version_string}"[:100],
+            }
+        except Exception:
+            return unknown
+
+
+class ClickEvent(db.Model):
+    """One row per redirect (full click history)."""
+    __tablename__ = 'click_event'
+
+    id = db.Column(db.Integer, primary_key=True)
+    url_id = db.Column(db.Integer, db.ForeignKey('url_map.id'), nullable=False, index=True)
+    occurred_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+    referrer = db.Column(db.String(500), nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    device_type = db.Column(db.String(50), nullable=True)
+    browser = db.Column(db.String(100), nullable=True)
+    os = db.Column(db.String(100), nullable=True)
+    user_agent = db.Column(db.String(256), nullable=True)
